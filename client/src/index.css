@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/* ───────── Design tokens (dark is the default, matches the product design) ───────── */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b0e14;
+  --panel: #0f131a;
+  --card: #151a23;
+  --raised: #1b212c;
+  --line: #1f2733;
+  --line-strong: #2b3546;
+  --fg: #e2e8f0;
+  --muted: #94a3b8;
+  --faint: #64748b;
+  --brand: #6366f1;
+  --brand-hover: #7c7ff5;
+  --brand-soft: rgb(99 102 241 / 0.14);
+  --accent: #22d3ee;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --shadow: 0 10px 30px -12px rgb(0 0 0 / 0.6);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f4f6fb;
+  --panel: #ffffff;
+  --card: #ffffff;
+  --raised: #f1f4f9;
+  --line: #e4e8f0;
+  --line-strong: #cfd6e3;
+  --fg: #0f172a;
+  --muted: #475569;
+  --faint: #8592a6;
+  --brand: #4f46e5;
+  --brand-hover: #4338ca;
+  --brand-soft: rgb(79 70 229 / 0.1);
+  --accent: #0891b2;
+  --ok: #059669;
+  --warn: #d97706;
+  --danger: #dc2626;
+  --shadow: 0 10px 30px -14px rgb(15 23 42 / 0.25);
+}
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --color-app: var(--bg);
+  --color-panel: var(--panel);
+  --color-card: var(--card);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--brand); color: #fff; }
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* ───────── Reusable component classes ───────── */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-[13px] font-semibold
+      transition disabled:cursor-not-allowed disabled:opacity-50 select-none whitespace-nowrap;
+  }
+  .btn-primary { @apply bg-brand text-white shadow-lg shadow-brand/20 hover:bg-brand-hover; }
+  .btn-accent { @apply bg-accent text-slate-950 hover:opacity-90; }
+  .btn-secondary { @apply border border-line bg-card text-fg hover:border-line-strong hover:bg-raised; }
+  .btn-ghost { @apply text-muted hover:bg-raised hover:text-fg; }
+  .btn-danger { @apply bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20; }
+  .btn-sm { @apply px-2.5 py-1.5 text-xs; }
+
+  .input {
+    @apply w-full rounded-lg border border-line bg-app px-3 py-2 text-[13px] text-fg placeholder:text-faint
+      transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:opacity-60;
+  }
+  .card { @apply rounded-xl border border-line bg-card; }
+  .panel { @apply rounded-xl border border-line bg-panel; }
+  .label { @apply text-[11px] font-semibold uppercase tracking-wider text-faint; }
+  .kbd { @apply rounded border border-line-strong bg-raised px-1.5 py-0.5 font-mono text-[10px] text-muted; }
+  .mono { @apply font-mono; }
+  .badge { @apply inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium; }
+}
+
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.animate-in { animation: fade-in 0.18s ease-out both; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

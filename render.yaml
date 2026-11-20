@@ -1,0 +1,20 @@
+# Render Blueprint — API on Render, frontend on Vercel/Netlify/Render Static (see README)
+services:
+  - type: web
+    name: vortex-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /ready
+    envVars:
+      - { key: NODE_ENV, value: production }
+      - { key: MONGO_URI, sync: false }
+      - { key: JWT_SECRET, generateValue: true }
+      - { key: FRONTEND_URL, sync: false }      # e.g. https://vortex.vercel.app
+      - { key: COOKIE_SAMESITE, value: none }   # frontend + API are on different sites
+      - { key: EMAIL_HOST, sync: false }
+      - { key: EMAIL_PORT, value: "587" }
+      - { key: EMAIL_USERNAME, sync: false }
+      - { key: EMAIL_PASSWORD, sync: false }
+      - { key: EMAIL_FROM, sync: false }

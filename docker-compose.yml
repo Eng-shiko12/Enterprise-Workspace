@@ -1,0 +1,41 @@
+# One-command production-like stack:  docker compose up --build
+# Open http://localhost:8080
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes: [mongo-data:/data/db]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    depends_on:
+      mongo: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/vortex
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in a .env file next to docker-compose.yml (>= 32 chars)}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+      # Plain http on localhost: browsers drop Secure cookies, so use lax + HTTP for the local demo.
+      # Behind HTTPS (real deployment) remove this line.
+      COOKIE_SAMESITE: lax
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}   # set to true once you serve over HTTPS
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USERNAME: ${EMAIL_USERNAME:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Vortex <noreply@localhost>}
+
+  client:
+    build: ./client
+    restart: unless-stopped
+    depends_on: [server]
+    ports: ["8080:80"]
+
+volumes:
+  mongo-data:
