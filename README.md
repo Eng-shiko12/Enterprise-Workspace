@@ -1,78 +1,92 @@
-Vortex — Project & Sprint ManagementSprint boards, backlog planning, kanban boards, team insights, and real-time collaboration built with the MERN stack (MongoDB · Express 5 · React 19 · Node.js 22), Socket.IO, and Tailwind CSS 4.Core CapabilitiesScreen / FeatureWhat It DoesActive SprintReal-time kanban board (drag between To Do → Done), scope/completion/pacing stats, filters, and list viewBacklog & PlanningSprints grouped with progress bars, inline issue creation, and sprint start/completion workflowsIssue DetailInline editing, properties sidebar, live comments, labels, and due datesInsights & VelocityBurndown charts, velocity history, cycle time, workload distribution, status/priority mix, and overdue itemsBoardsFree-form lists and cards with drag-and-drop across listsTeam & AccessRole-based access (owner / admin / member), invitations, audit activity logs, and workspace settingsProfileAssigned work across workspaces, account security, and password managementGlobal Utilities⌘K / Ctrl+K global search, C quick issue modal, live notifications, and light/dark theme toggleSystem Architecture+-----------------------------------------------------------------------------------+
-|                                   CLIENT LAYER                                    |
-|                                                                                   |
-|   +---------------------------------------------------------------------------+   |
-|   |                  React 19 SPA (Vite + Tailwind CSS 4)                     |   |
-|   |  • Active Sprint & Kanban DnD      • Insights, Burndown & Velocity        |   |
-|   |  • Cmd+K Global Search & Modals    • Context Providers (Auth/Workspace)   |   |
-|   +-------------------------------------+-------------------------------------+   |
-+-----------------------------------------|-----------------------------------------+
-                                          |
-                     HTTPS (REST /api/v1 & WebSockets /socket.io)
-                                          |
-                                          v
-+-----------------------------------------------------------------------------------+
-|                             EDGE / REVERSE PROXY                                  |
-|                                                                                   |
-|   +---------------------------------------------------------------------------+   |
-|   |             Nginx (Docker) / Vercel + Render Edge Proxy                   |   |
-|   |  • Serves static SPA assets        • Proxies /api & /socket.io            |   |
-|   +-------------------------------------+-------------------------------------+   |
-+-----------------------------------------|-----------------------------------------+
-                                          |
-                                          v
-+-----------------------------------------------------------------------------------+
-|                              APPLICATION SERVER                                   |
-|                                                                                   |
-|   +---------------------------------------------------------------------------+   |
-|   |                        Node.js 22 + Express 5 API                         |   |
-|   |                                                                           |   |
-|   |  [Security & Middleware]                                                  |   |
-|   |   Helmet · Strict CORS · Rate Limiter · Joi Validation · Mongo Sanitize   |   |
-|   |   httpOnly JWT Cookie Auth · RBAC (Owner / Admin / Member)                |   |
-|   |                                                                           |   |
-|   |  [Domain Controllers & Services]                                          |   |
-|   |   Auth & OTP · Workspaces · Projects · Sprints/Tasks · Boards/Lists/Cards |   |
-|   |   Comments · Global Search · Activity Logs · Analytics & Burndown Math    |   |
-|   +-------------------------------------+-------------------------------------+   |
-|                                         |                                         |
-|   +-------------------------------------v-------------------------------------+   |
-|   |                      Socket.IO Real-Time Engine                           |   |
-|   |  • Workspace & Task Rooms          • Live Task, Comment & Notification Sync|  |
-|   +-------------------------------------+-------------------------------------+   |
-+-----------------------------------------|-----------------------------------------+
-                                          |
-                      +-------------------+-------------------+
-                      |                                       |
-                      v                                       v
-+-------------------------------------------+   +-----------------------------------+
-|               DATA LAYER                  |   |         EXTERNAL SERVICES         |
-|                                           |   |                                   |
-|   +-----------------------------------+   |   +-------------------------------+   |
-|   |       MongoDB + Mongoose ODM      |   |   |      SMTP Email Service       |   |
-|   |  • Users, Workspaces & Members    |   |   |  • Email Verification OTPs    |   |
-|   |  • Projects, Tasks & Comments     |   |   |  • Password Reset Codes       |   |
-|   |  • Boards, Lists, Cards & Logs    |   |   |  • Workspace Invitations      |   |
-|   +-----------------------------------+   |   +-------------------------------+   |
-+-------------------------------------------+   +-----------------------------------+
-Quick Start (Local Development)1. API Servercd server
-cp .env.example .env          # configure MONGO_URI and JWT_SECRET
+# Vortex — Project & Sprint Management
+
+Sprint boards, backlog planning, kanban boards, team insights and realtime collaboration.
+**MERN** (MongoDB · Express 5 · React 19 · Node 22) + Socket.IO + Tailwind CSS 4.
+
+| Screen | What it does |
+|---|---|
+| **Active Sprint** | Realtime kanban (drag between To Do → Done), scope / completion / pacing stats, filters, list view |
+| **Backlog & Planning** | Sprints grouped with progress, inline “add issue”, start/complete sprint |
+| **Issue Detail** | Inline editing, properties sidebar, comments (live), labels, due dates |
+| **Insights & Velocity** | Burndown, velocity history, cycle time, workload, status/priority mix, overdue items |
+| **Boards** | Free-form lists & cards with drag-and-drop across lists |
+| **Team & Access** | Roles (owner/admin/member), invitations, activity log, workspace settings |
+| **Profile** | My assigned work across workspaces, security, password change |
+| Everywhere | ⌘K global search · `C` new issue · notifications (live) · light/dark theme |
+
+## Quick start (local development)
+
+```bash
+# 1. API
+cd server
 npm install
-npm run seed                  # optional demo data (demo@vortex.dev / Demo@12345)
-npm run dev                   # starts on http://localhost:5000
-2. Web Client (Second Terminal)cd client
+npm run dev                   # http://localhost:5000
+
+# 2. Web (second terminal)
+cd client
 npm install
-npm run dev                   # starts on http://localhost:5173 (proxies /api and /socket.io to :5000)
-Note: When SMTP credentials are not configured in local development, email verification and password reset OTP codes are printed directly to the server console.DeploymentOption A — Docker Compose (Single Origin)Recommended for simplified cookie and CORS behavior behind a reverse proxy on the same origin:echo "JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")" > .env
-docker compose up --build -d
+npm run dev                   # http://localhost:5173  (proxies /api and /socket.io to :5000)
+```
+
+Without SMTP credentials the verification / reset codes are printed in the **server console** (development only).
+
+## Deploy
+
+### Option A — Docker Compose (recommended, one origin, no CORS/cookie headaches)
+
+```bash
+echo "JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")" > .env
+docker compose up --build -d      # http://localhost:8080
 docker compose exec server node scripts/seed.js   # optional demo data
-Application runs on http://localhost:8080 with Nginx serving the SPA and proxying /api and /socket.io to the Express API.Terminate TLS/HTTPS in front of the stack (e.g., Caddy, Traefik, or cloud load balancer) and set COOKIE_SECURE=true in .env. Only remove COOKIE_SAMESITE: lax in docker-compose.yml if serving the client from a different site than the API.Option B — Split Hosting (Render + Vercel / Netlify)Backend API on Render (render.yaml included) connected to a MongoDB Atlas MONGO_URI:Set FRONTEND_URL=https://<your-frontend-domain> (comma-separate multiple origins if needed).Set COOKIE_SAMESITE=none when using cross-site cookies over HTTPS.Frontend SPA on Vercel / Netlify:Set root directory to client/, build command to npm run build, and output directory to dist.Set VITE_API_URL=https://<your-api-domain>/api/v1.SPA fallback rewrites are preconfigured via client/vercel.json and client/public/_redirects.Environment VariablesServerVariablePurposeNODE_ENVRuntime environment (development or production)MONGO_URIRequired. MongoDB connection stringJWT_SECRETRequired. Signing secret (>= 32 characters in production; startup fails otherwise)FRONTEND_URLAllowed browser origin(s), comma-separatedCOOKIE_SAMESITECookie SameSite policy (lax by default or none for cross-site HTTPS)COOKIE_SECURESet to true when serving over HTTPSTRUST_PROXYNumber of reverse proxies in front of the API (defaults to 1 in production)RATE_LIMIT_MAXGeneral API request cap per IP per 15 minutes (default 600)AUTH_RATE_LIMIT_MAXAuth endpoint request cap per IP per 15 minutes (default 30)EMAIL_*SMTP transport credentials for OTP verification, password resets, and invitesClient (Build Time)VariablePurposeVITE_API_URLLeave empty for same-origin /api/v1, or provide full API base URLVITE_SOCKET_URLOptional Socket.IO server origin overrideHealth ChecksGET /health — Liveness probeGET /ready — Readiness probe (verifies database connection)Quality GatesRun local checks across both server and client before pushing or deploying:cd server && npm test
+```
+nginx serves the SPA and proxies `/api` + `/socket.io` to the API. Put it behind HTTPS
+(Caddy / Traefik / your cloud load balancer) and **remove** `COOKIE_SAMESITE: lax` from
+`docker-compose.yml` only if you serve it from a different site than the API, and set
+`COOKIE_SECURE=true` in your `.env` once you terminate HTTPS.
+
+### Option B — Split hosting (e.g. Render + Vercel)
+
+1. **API on Render** (`render.yaml` included) with a MongoDB Atlas `MONGO_URI`.
+   - `FRONTEND_URL=https://<your-frontend-domain>` (comma-separate multiple origins)
+   - `COOKIE_SAMESITE=none` (cookies are Secure + cross-site)
+2. **Frontend on Vercel / Netlify** with root `client/`, build `npm run build`, output `dist`.
+   - `VITE_API_URL=https://<api-domain>/api/v1`
+   - SPA rewrites are already configured (`vercel.json`, `public/_redirects`).
+
+### Environment variables
+
+| Server | Purpose |
+|---|---|
+| `MONGO_URI`, `JWT_SECRET` | **Required.** In production the secret must be ≥ 32 chars (the server refuses to start otherwise) |
+| `FRONTEND_URL` | Allowed browser origin(s), comma separated |
+| `COOKIE_SAMESITE` | `lax` (same site, default) or `none` (cross-site) |
+| `TRUST_PROXY` | Reverse proxies in front of the API (default `1` in production) |
+| `RATE_LIMIT_MAX`, `AUTH_RATE_LIMIT_MAX` | Per-IP limits per 15 min (600 / 30) |
+| `EMAIL_*` | SMTP for OTP codes and invitations |
+
+| Client (build time) | Purpose |
+|---|---|
+| `VITE_API_URL` | Empty = same origin `/api/v1`; otherwise full API URL |
+| `VITE_SOCKET_URL` | Optional Socket.IO origin override |
+
+Health endpoints: `GET /health` (liveness) · `GET /ready` (database connected).
+
+## Quality gates
+
+```bash
+cd server && npm test          # 36 tests: auth, lockout, RBAC, validation, models, burndown math
 cd client && npm run lint && npm test && npm run build
-Automated CI runs these checks on pushes via .github/workflows/ci.yml.Security HighlightsAuthentication & Sessions: httpOnly JWT cookies with boot-time secret validation (>= 32 chars in production).Access Control: Role-based access control (owner / admin / member), strict workspace membership checks (returning 404 to non-members), and blocking access for pending invitees until acceptance.Input & Abuse Protection: Helmet security headers, strict CORS allow-listing, Joi schema validation rejecting unknown keys, MongoDB operator sanitization, regex escaping in search queries, login attempt lockout (5 attempts / 15 minutes), per-IP rate limiting, and hashed OTPs that are never returned in API responses.Project Layout.
-├── .github/workflows/ci.yml   # Automated CI quality checks
-├── docker-compose.yml         # Single-origin multi-container setup
-├── render.yaml                # Render deployment blueprint
-├── client/                    # React 19 + Vite + Tailwind CSS 4 SPA
-│   └── src/                   # api, components, context, hooks, lib, pages, test
-└── server/                    # Node 22 + Express 5 + Socket.IO API
-    └── ...                    # config, controllers, routes, models, middlewares, sockets, validators, test, scripts
+```
+CI runs the same on every push (`.github/workflows/ci.yml`).
+
+## Security notes
+httpOnly JWT cookie · Helmet · strict CORS allow-list · Joi validation with unknown-key rejection ·
+Mongo-operator stripping · regex escaping in search · login lockout (5 attempts / 15 min) ·
+per-IP rate limits · OTPs hashed and never returned by the API · pending invitees are denied
+access until they accept · workspace ids return 404 to outsiders · secrets are validated at boot.
+
+## Project layout
+```
+server/   Express API  (config · controllers · routes · models · middlewares · sockets · validators · test · scripts)
+client/   React SPA    (api · components · context · hooks · lib · pages · test)
+```
